@@ -6,7 +6,7 @@ from tkinter import messagebox as mb
 
 
 class App(Tk):
-    """Класс создающий главное окно приложения"""
+    """Создает главное окно приложения"""
     def __init__(self):
         super().__init__()
         self.choice = None
