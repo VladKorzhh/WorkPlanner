@@ -322,7 +322,7 @@ class Section(ctk.CTkToplevel):
                                  border_color="#004B87",
                                  fg_color="#565b5e",
                                  width=200,
-                                 command=lambda: Base.get_table_row())
+                                 command=lambda: Base.get_table_row(table, self))
         button_3.grid(row=6, column=0, pady=10, padx=20)
         button_4 = ctk.CTkButton(master=frame_left,
                                  font=self.control_font,
