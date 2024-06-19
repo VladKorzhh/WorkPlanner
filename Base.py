@@ -5,20 +5,22 @@ import datetime as dt
 from tkinter import *
 import os
 import sqlite3
-
 from openpyxl.reader.excel import load_workbook
 
 
 class Base:
     """Класс по работе с базой данных SQLite"""
+
     PATH = 'E:/Обучение_IT/Projects/PyCharm/Work_Planner/SalesAndServices.sqlite'
     VALUES_LIST = []
     QUOTES = "'"
     TP_LIST = ['Новое ТП', 'Увеличение ММ', 'Изменение точки присоединения', 'Смена собственника',
                'Опосредованное ТП', 'Уменьшение ММ']
-    SERVICE_LIST = ['Замена', 'Замена МПИ', 'Инструментальная проверка', 'Присоединение жил проводов',
-                    'Переопломбировка', 'Иное', ]
-    APPEAL_LIST = ['Качество', 'Наружное освещение', 'Обследование ЛЭП', 'Расчистка трассы', 'Прочее', 'Замена ввода']
+    SERVICE_LIST = ['Замена ПУ', 'Замена МПИ', 'Инструментальная проверка', 'Присоединение жил проводов',
+                    'Переопломбировка', 'Вывод ПУ из расчетов', 'Вывод ПУ из расчетов', 'Осмотр ПУ',
+                    'Прочее (связаться со специалистом)']
+    APPEAL_LIST = ['Качество', 'Наружное освещение', 'Обследование ЛЭП', 'Расчистка трассы', 'Прочее', 'Замена ввода',
+                   'Хищение э/э', 'Обследование ПУ', 'Замена ПУ']
 
     @classmethod
     def add_row_in_table(cls, name_table, column, values, text, def_name):
@@ -112,6 +114,47 @@ class Base:
             db.commit()
             cursor.close()
             count = count1 + count2 + count3 + count4
+        for row in range(0, count):
+            table.insert('', 'end', values=cls.VALUES_LIST[row])
+        cls.VALUES_LIST = []
+
+    @classmethod
+    def show_all_raws(cls, table, *check_var):
+        if check_var[0] == 'нет':
+            table.delete(*table.get_children())
+        db = sqlite3.connect(cls.PATH)
+        cursor = db.cursor()
+        cursor.execute(
+            f"""SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
+                           Квартира, Задание, [Дата исполнения], СТП
+                FROM Задания WHERE Исполнено IS NULL
+                UNION ALL SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
+                                 Квартира, [Вид услуги] AS Задание, [Дата исполнения], СТП
+                FROM Сервисы WHERE Исполнено IS NULL
+                UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS [Номер ПУ], '' AS [Фазность ПУ], [Населенный пункт],
+                                 Улица, Дом, Квартира, [Причина обращения] AS Задание, [Дата исполнения], СТП
+                FROM Обращения WHERE Исполнено IS NULL
+                UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS[Номер ПУ], [U,кВ] AS [Фазность ПУ], [Населенный пункт],
+                                 Улица, Дом, Квартира, [Тип подключения] AS Задание, [Дата исполнения], СТП
+                                 FROM ТехПрис WHERE Исполнено IS NULL""")
+        for i in cursor.fetchall():
+            all_columns = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], i[11], i[12])
+            cls.VALUES_LIST.append(all_columns)
+        cursor.execute(
+            f'SELECT COUNT(id) FROM Сервисы WHERE Исполнено IS NULL')
+        count1 = cursor.fetchone()[0]
+        cursor.execute(
+            f'SELECT COUNT(id) FROM Задания WHERE Исполнено IS NULL')
+        count2 = cursor.fetchone()[0]
+        cursor.execute(
+            f'SELECT COUNT(id) FROM Обращения WHERE Исполнено IS NULL')
+        count3 = cursor.fetchone()[0]
+        cursor.execute(
+            f'SELECT COUNT(id) FROM ТехПрис WHERE Исполнено IS NULL')
+        count4 = cursor.fetchone()[0]
+        db.commit()
+        cursor.close()
+        count = count1 + count2 + count3 + count4
         for row in range(0, count):
             table.insert('', 'end', values=cls.VALUES_LIST[row])
         cls.VALUES_LIST = []
@@ -304,10 +347,4 @@ class Base:
         wb.close()
         os.startfile(fn)
 
-    # @classmethod
-    # def drop(cls):
-    #     db = sqlite3.connect(cls.PATH)
-    #     cursor = db.cursor()
-    #     cursor.execute(f'DELETE FROM Обращения')
-    #     db.commit()
-    #     cursor.close()
+

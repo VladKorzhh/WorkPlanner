@@ -1,14 +1,16 @@
 from Base import *
 import customtkinter as ctk
 import tkinter.ttk as ttk
+from datetime import timedelta
 
 
 class ColorTreeview(ttk.Treeview):
-    """Класс добавляет возможность  выделения красным цветом строк таблицы с прошедшей датой"""
+    """Класс добавляет возможность выделения красным цветом строк таблицы с прошедшей датой"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tag_configure('red', background='#870007')
+        self.tag_configure('yellow', background='#C96115')
 
     def insert(self, parent_node, index, **kwargs):
         """Назначение тега при добавлении элемента в дерево"""
@@ -18,6 +20,9 @@ class ColorTreeview(ttk.Treeview):
             my_dt = dt.datetime.strptime(values[11], '%d.%m.%Y')
             if my_dt < dt.datetime.now():
                 super().item(item, tag='red')
+            elif my_dt < dt.datetime.now() + timedelta(days=3):
+                super().item(item, tag='yellow')
+
         return item
 
 
@@ -87,12 +92,14 @@ class Section(ctk.CTkToplevel):
                     Section.set_combobox(self, column, self.values, ['ЮЛ', 'ФЛ'], self.row)
                     self.row += 1
                 case 'Вид услуги':
-                    Section.set_combobox(self, column, self.values, ['Замена',
+                    Section.set_combobox(self, column, self.values, ['Замена ПУ',
                                                                      'Замена МПИ',
                                                                      'Инструментальная проверка',
                                                                      'Присоединение жил проводов',
                                                                      'Переопломбировка',
-                                                                     'Иное'], self.row)
+                                                                     'Вывод ПУ из расчетов',
+                                                                     'Осмотр ПУ',
+                                                                     'Прочее (связаться со специалистом)'], self.row)
                     self.row += 1
                 case 'Фазность ПУ':
                     Section.set_combobox(self, column, self.values, ['1Ф', '3Ф', '3Ф ТТ'], self.row)
@@ -158,7 +165,8 @@ class Section(ctk.CTkToplevel):
                 case 'Причина обращения':
                     Section.set_combobox(self, column, self.values,
                                          ['Качество', 'Наружное освещение', 'Обследование ЛЭП', 'Расчистка трассы',
-                                          'Прочее'], self.row)
+                                          'Прочее', 'Замена ввода', 'Хищение э/э', 'Обследование ПУ', 'Замена ПУ'],
+                                         self.row)
                     self.row += 1
                 case _:
                     Section.set_combobox(self, column, self.values, False, self.row)
@@ -334,6 +342,16 @@ class Section(ctk.CTkToplevel):
                                  width=200,
                                  command=lambda: Base.upload_route_to_excel(columns, table))
         button_4.place(x=122, y=736, anchor=CENTER)
+        button_5 = ctk.CTkButton(master=frame_left,
+                                 font=self.control_font,
+                                 text="Показать всё",
+                                 corner_radius=15,
+                                 border_width=3,
+                                 border_color="#004B87",
+                                 fg_color="#565b5e",
+                                 width=200,
+                                 command=lambda: Base.show_all_raws(table, check_var.get()))
+        button_5.place(x=122, y=691, anchor=CENTER)
 
     def edit(self, table):
         """Создание модального окна по редактированию строк таблицы"""
@@ -539,6 +557,36 @@ class Section(ctk.CTkToplevel):
                 cursor.close()
                 Base.VALUES_LIST = []
         mb.showinfo(title="Информация", message="Успешно!", parent=parent_window)
+
+    def work_with_base(self):
+        set_id_label = ctk.CTkLabel(self, text='id', font=self.my_font, text_color='#004B87', bg_color='#d5d8db')
+        set_id_label.grid(row=0, column=0)
+        set_table_label = ctk.CTkLabel(self, text='Таблица', font=self.my_font, text_color='#004B87',
+                                       bg_color='#d5d8db')
+        set_table_label.grid(row=1, column=0)
+        id_var = StringVar()
+        set_id_entry = ctk.CTkEntry(self, width=250, font=self.my_font, textvariable=id_var, bg_color='#d5d8db')
+        set_id_entry.grid(row=0, column=1)
+        table_var = StringVar()
+        set_table_entry = ctk.CTkEntry(self, width=250, font=self.my_font, textvariable=table_var, bg_color='#d5d8db')
+        set_table_entry.grid(row=1, column=1)
+        button = ctk.CTkButton(master=self,
+                               font=self.control_font,
+                               text="Удалить",
+                               corner_radius=15,
+                               border_width=3,
+                               border_color="#004B87",
+                               fg_color="#565b5e",
+                               width=200,
+                               command=lambda: drop(id_var.get(), table_var.get()))
+        button.place(x=210, y=90, anchor=CENTER)
+
+        def drop(num_id, name_table):
+            db = sqlite3.connect(Base.PATH)
+            cursor = db.cursor()
+            cursor.execute(f'DELETE FROM {name_table} WHERE id = {num_id}')
+            db.commit()
+            cursor.close()
 
 
 class EditTable(ctk.CTkToplevel):

@@ -6,7 +6,7 @@ from tkinter import messagebox as mb
 
 
 class App(Tk):
-    """Создает главное окно приложения"""
+    """Класс создающий главное окно приложения"""
     def __init__(self):
         super().__init__()
         self.choice = None
@@ -25,7 +25,8 @@ class App(Tk):
         self.listbox.insert(1, "Дополнительные сервисы")
         self.listbox.insert(2, "Жалобы и обращения")
         self.listbox.insert(3, "Задания")
-        self.listbox.insert(END, "Управление")
+        self.listbox.insert(4, "Управление")
+        self.listbox.insert(END, "Работа с базой")
         self.password_entry_for_registration = ctk.CTkEntry(self, width=200, font=self.my_font)
         self.login_entry_for_registration = ctk.CTkEntry(self, width=200, font=self.my_font)
         self.name_entry_for_registration = ctk.CTkEntry(self, width=200, font=self.my_font)
@@ -52,12 +53,12 @@ class App(Tk):
                                                          self.password_entry_for_registration.get().encode()).hexdigest(),
                                                      self.name_entry_for_registration.get()))
         self.label_great = ctk.CTkLabel(self, text='Успешно!', text_color='green', font=self.my_font)
+        self.login = ctk.CTkLabel(self, text='Логин:', font=self.my_font, fg_color='#004B87', text_color='white')
 
     def show_login(self, event):
         """Отображает поле ввода логина и пароля при двойном клике по данным в listbox"""
         self.choice = self.listbox.curselection()[0]
-        login = ctk.CTkLabel(self, text='Логин:', font=self.my_font, fg_color='#004B87', text_color='white')
-        login.grid(row=0, column=2, pady=20, sticky=N + W)
+        self.login.grid(row=0, column=2, pady=20, sticky=N + W)
         self.login_entry.grid(row=0, column=2, padx=70, pady=20, sticky=N + W)
         password = ctk.CTkLabel(self, text='Пароль:', font=self.my_font, fg_color='#004B87', text_color='white')
         password.grid(row=0, column=2, pady=55, sticky=N + W)
@@ -142,6 +143,8 @@ class App(Tk):
             Section('тех_прис').tech_conn()
         elif self.choice == 4 and registered_user is True:
             Section('Управление').control()
+        elif self.choice == 5 and self.login_entry.get() == 'admin' and self.password_entry.get() == 'admin':
+            Section('Управление').work_with_base()
         else:
             ctk.CTkLabel(self, text='Неверный логин/пароль', font=self.my_font, text_color='red').grid(
                 row=0, column=2, pady=150, sticky=N + W)
