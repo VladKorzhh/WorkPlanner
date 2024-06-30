@@ -6,6 +6,8 @@ from tkinter import *
 import os
 import sqlite3
 from openpyxl.reader.excel import load_workbook
+import customtkinter as ctk
+
 
 
 class Base:
@@ -17,10 +19,57 @@ class Base:
     TP_LIST = ['Новое ТП', 'Увеличение ММ', 'Изменение точки присоединения', 'Смена собственника',
                'Опосредованное ТП', 'Уменьшение ММ']
     SERVICE_LIST = ['Замена ПУ', 'Замена МПИ', 'Инструментальная проверка', 'Присоединение жил проводов',
-                    'Переопломбировка', 'Вывод ПУ из расчетов', 'Вывод ПУ из расчетов', 'Осмотр ПУ',
-                    'Прочее (связаться со специалистом)']
-    APPEAL_LIST = ['Качество', 'Наружное освещение', 'Обследование ЛЭП', 'Расчистка трассы', 'Прочее', 'Замена ввода',
-                   'Хищение э/э', 'Обследование ПУ', 'Замена ПУ']
+                    'Переопломбировка', 'Вывод ПУ из расчетов', 'Осмотр ПУ', 'Прочее (Полухина Т.Н.)']
+    APPEAL_LIST = ['Качество', 'Наружное освещение', 'Обследование ЛЭП', 'Расчистка трассы', 'Прочее (Рахманина Е.В.)',
+                   'Замена ввода', 'Хищение э/э', 'Обследование ПУ', 'Замена ПУ по жалобе']
+
+    @classmethod
+    def insert(cls, login: str, password: str, name: str) -> bool:
+        current_name = cls.QUOTES + name + cls.QUOTES
+        current_login = cls.QUOTES + login + cls.QUOTES
+        current_password = cls.QUOTES + password + cls.QUOTES
+        db = sqlite3.connect(cls.PATH)
+        cursor = db.cursor()
+        cursor.execute(
+            f'INSERT INTO Users (ФИО, Логин, Пароль) VALUES ({current_name}, {current_login}, {current_password})')
+        db.commit()
+        cursor.close()
+
+    @classmethod
+    def select(cls):
+        db = sqlite3.connect(cls.PATH)
+        cursor = db.cursor()
+        cursor.execute(
+            f'SELECT * FROM Users')
+        users = cursor.fetchall()
+        return users
+
+    @classmethod
+    def get_label_if_date_invalid(cls, value, def_name):
+        """Проверят поле ввода даты на ДД.ММ.ГГГГ"""
+        if len(cls.VALUES_LIST[value]) > 10 or len(cls.VALUES_LIST[value].split('.')) < 3:
+            return ctk.CTkLabel(def_name, text='формат даты должен быть ДД.ММ.ГГГГ', text_color='red',
+                                bg_color='#d5d8db').grid(row=value,
+                                                         column=3,
+                                                         padx=20,
+                                                         pady=5,
+                                                         sticky=W)
+        else:
+            return True
+
+    @classmethod
+    def validation_by_date(cls, name_table, def_name):
+        """Исполняет функцию get_label_if_date_invalid в зависимости от таблицы """
+        match name_table:
+            case 'Сервисы':
+                if cls.get_label_if_date_invalid(13, def_name):
+                    return True
+            case 'ТехПрис':
+                if cls.get_label_if_date_invalid(16, def_name):
+                    return True
+            case _:
+                if cls.get_label_if_date_invalid(11, def_name):
+                    return True
 
     @classmethod
     def add_row_in_table(cls, name_table, column, values, text, def_name):
@@ -28,16 +77,17 @@ class Base:
         for i in values:
             cls.VALUES_LIST.append(i.get())
         cls.VALUES_LIST.append(text.get(1.0, END))
-        db = sqlite3.connect(cls.PATH)
-        cursor = db.cursor()
-        cursor.execute(f'INSERT INTO {name_table} {tuple(column)} VALUES {tuple(cls.VALUES_LIST)}')
-        db.commit()
-        cursor.close()
-        success = mb.askyesno(message="Задание создано. Продолжить?")
-        if success:
-            pass
-        else:
-            def_name.destroy()
+        if cls.validation_by_date(name_table, def_name):
+            db = sqlite3.connect(cls.PATH)
+            cursor = db.cursor()
+            cursor.execute(f'INSERT INTO {name_table} {tuple(column)} VALUES {tuple(cls.VALUES_LIST)}')
+            db.commit()
+            cursor.close()
+            success = mb.askyesno(message="Задание создано. Продолжить?")
+            if success:
+                pass
+            else:
+                def_name.destroy()
         cls.VALUES_LIST = []
 
     @classmethod
@@ -54,30 +104,30 @@ class Base:
         if street_for_sql == "''":
             cursor.execute(
                 f"""SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
-                           Квартира, Задание, [Дата исполнения], СТП
+                           Квартира, Задание, [Дата исполнения], Приоритет
                 FROM Задания WHERE ([Населенный пункт] = {locality_for_sql}) AND (Исполнено IS NULL)
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
-                                 Квартира, [Вид услуги] AS Задание, [Дата исполнения], СТП
+                                 Квартира, [Вид услуги] AS Задание, [Дата исполнения], Приоритет
                 FROM Сервисы WHERE ([Населенный пункт] = {locality_for_sql}) AND (Исполнено IS NULL)
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS [Номер ПУ], '' AS [Фазность ПУ], [Населенный пункт],
-                                 Улица, Дом, Квартира, [Причина обращения] AS Задание, [Дата исполнения], СТП
+                                 Улица, Дом, Квартира, [Причина обращения] AS Задание, [Дата исполнения], Приоритет
                 FROM Обращения WHERE ([Населенный пункт] = {locality_for_sql}) AND (Исполнено IS NULL)
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS[Номер ПУ], [U,кВ] AS [Фазность ПУ], [Населенный пункт],
-                                 Улица, Дом, Квартира, [Тип подключения] AS Задание, [Дата исполнения], СТП
+                                 Улица, Дом, Квартира, [Тип подключения] AS Задание, [Дата исполнения], Приоритет
                                  FROM ТехПрис WHERE ([Населенный пункт] = {locality_for_sql}) AND (Исполнено IS NULL)""")
         else:
             cursor.execute(
                 f"""SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
-                           Квартира, Задание, [Дата исполнения], СТП
+                           Квартира, Задание, [Дата исполнения], Приоритет
                 FROM Задания WHERE ([Населенный пункт] = {locality_for_sql} AND Улица = {street_for_sql}) AND (Исполнено IS NULL)
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
-                                 Квартира, [Вид услуги] AS Задание, [Дата исполнения], СТП
+                                 Квартира, [Вид услуги] AS Задание, [Дата исполнения], Приоритет
                 FROM Сервисы WHERE ([Населенный пункт] = {locality_for_sql} AND Улица = {street_for_sql}) AND (Исполнено IS NULL)
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS [Номер ПУ], '' AS [Фазность ПУ], [Населенный пункт],
-                                 Улица, Дом, Квартира, [Причина обращения] AS Задание, [Дата исполнения], СТП
+                                 Улица, Дом, Квартира, [Причина обращения] AS Задание, [Дата исполнения], Приоритет
                 FROM Обращения WHERE ([Населенный пункт] = {locality_for_sql} AND Улица = {street_for_sql}) AND (Исполнено IS NULL)
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS[Номер ПУ], [U,кВ] AS [Фазность ПУ], [Населенный пункт],
-                                 Улица, Дом, Квартира, [Тип подключения] AS Задание, [Дата исполнения], СТП
+                                 Улица, Дом, Квартира, [Тип подключения] AS Задание, [Дата исполнения], Приоритет
                 FROM ТехПрис WHERE ([Населенный пункт] = {locality_for_sql} AND Улица = {street_for_sql}) AND (Исполнено IS NULL)""")
         for i in cursor.fetchall():
             all_columns = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], i[11], i[12])
@@ -126,16 +176,16 @@ class Base:
         cursor = db.cursor()
         cursor.execute(
             f"""SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
-                           Квартира, Задание, [Дата исполнения], СТП
+                           Квартира, Задание, [Дата исполнения], Приоритет
                 FROM Задания WHERE Исполнено IS NULL
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, [Номер ПУ], [Фазность ПУ], [Населенный пункт], Улица, Дом,
-                                 Квартира, [Вид услуги] AS Задание, [Дата исполнения], СТП
+                                 Квартира, [Вид услуги] AS Задание, [Дата исполнения], Приоритет
                 FROM Сервисы WHERE Исполнено IS NULL
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS [Номер ПУ], '' AS [Фазность ПУ], [Населенный пункт],
-                                 Улица, Дом, Квартира, [Причина обращения] AS Задание, [Дата исполнения], СТП
+                                 Улица, Дом, Квартира, [Причина обращения] AS Задание, [Дата исполнения], Приоритет
                 FROM Обращения WHERE Исполнено IS NULL
                 UNION ALL SELECT id, ФИО, [Тип лица], Телефон, '' AS[Номер ПУ], [U,кВ] AS [Фазность ПУ], [Населенный пункт],
-                                 Улица, Дом, Квартира, [Тип подключения] AS Задание, [Дата исполнения], СТП
+                                 Улица, Дом, Квартира, [Тип подключения] AS Задание, [Дата исполнения], Приоритет
                                  FROM ТехПрис WHERE Исполнено IS NULL""")
         for i in cursor.fetchall():
             all_columns = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], i[11], i[12])
@@ -228,8 +278,8 @@ class Base:
                        ("CSV files", "*.csv")))
         conn = sqlite3.connect(cls.PATH)
         df = pd.read_sql(f'SELECT * FROM {name_table}', conn)
-        if name_table != 'Сервисы':
-            df.drop(columns=['СТП'], axis=1, inplace=True)
+        # if name_table != 'Сервисы':
+        #     df.drop(columns=['СТП'], axis=1, inplace=True)
         writer = pd.ExcelWriter(file)
         df.to_excel(writer, index=False, sheet_name='Лист1')
         for column in df:
@@ -268,7 +318,7 @@ class Base:
         cursor.execute(f'SELECT COUNT(id) FROM {name}')
         all_service = cursor.fetchone()
         all_service_int, = all_service
-        cursor.execute(f'SELECT COUNT(СТП) FROM {name} WHERE СТП == "да"')
+        cursor.execute(f'SELECT COUNT(Приоритет) FROM {name} WHERE Приоритет == "СТП"')
         stp = cursor.fetchone()
         stp_int, = stp
         mc = str((stp_int / all_service_int) * 100)
@@ -346,5 +396,3 @@ class Base:
         wb.save(fn)
         wb.close()
         os.startfile(fn)
-
-

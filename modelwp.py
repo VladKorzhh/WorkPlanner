@@ -7,6 +7,7 @@ from tkinter import messagebox as mb
 
 class App(Tk):
     """Класс создающий главное окно приложения"""
+
     def __init__(self):
         super().__init__()
         self.choice = None
@@ -70,7 +71,6 @@ class App(Tk):
 
     def show_registration(self):
         """Показывает поле регистрации при нажатии на соответствующую кнопку"""
-        self.init_file()
         self.reg_button.grid_remove()
         self.name.grid(row=1, column=0, pady=20, padx=5, sticky=N + W)
         self.name_entry_for_registration.grid(row=1, column=0, padx=70, pady=20, sticky=N + W)
@@ -80,27 +80,12 @@ class App(Tk):
         self.password_entry_for_registration.grid(row=1, column=0, padx=70, pady=90, sticky=N + W)
         self.registration_button.grid(row=1, column=0, padx=1, pady=125, sticky=N)
 
-    @staticmethod
-    def init_file():
-        """Создает файл пользователей"""
-        if not os.path.exists('users.txt'):
-            with open('users.txt', 'w'):
-                pass
-
     def registration(self, login: str, password: str, name: str) -> bool:
         """Добавляет пользователя в файл"""
         if login == '' or password == '':
             mb.showinfo(title="Информация", message="Заполните все поля!")
         else:
-            with open('users.txt', 'r') as f:
-                users = f.read().splitlines()
-            for user in users:
-                args = user.split(':')
-                if login == args[0]:
-                    self.label_great.grid(row=1, column=0, padx=1, pady=160, sticky=N)
-                    return False
-            with open('users.txt', 'a') as f:
-                f.write(f'{login}:{password}:{name}\n')
+            Base.insert(login, password, name)
 
         winsound.PlaySound('sound.mp3', winsound.SND_ALIAS | winsound.SND_ASYNC)
         self.name.grid_remove()
@@ -118,12 +103,9 @@ class App(Tk):
 
     def get_user(self, login: str, password: str) -> bool:
         """Проверяет логин и пароль пользователя"""
-        with open('users.txt', 'r') as f:
-            users = f.read().splitlines()
-        for user in users:
-            args = user.split(':')
+        for user in Base.select():
             try:
-                if login == args[0] and password == args[1]:
+                if login == user[2] and password == user[3]:
                     return True
             except IndexError:
                 ctk.CTkLabel(self, text='Неверный логин/пароль', font=self.my_font, text_color='red').grid(
@@ -131,7 +113,7 @@ class App(Tk):
         return False
 
     def enter_in_app(self, login: str, password: str):
-        """Открытие соответствующего модального окна при введении логина,пароля и нажатии кнопки вход"""
+        """Открытие соответствующего модального окна при введении логина, пароля и нажатии кнопки вход"""
         registered_user = self.get_user(login, hashlib.sha256(password.encode()).hexdigest())
         if self.choice == 1 and registered_user is True:
             Section('Сервисы').services()

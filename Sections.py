@@ -1,7 +1,10 @@
+
 from Base import *
 import customtkinter as ctk
 import tkinter.ttk as ttk
 from datetime import timedelta
+import datetime as dt
+
 
 
 class ColorTreeview(ttk.Treeview):
@@ -61,6 +64,7 @@ class Section(ctk.CTkToplevel):
                                                                                                            padx=20,
                                                                                                            pady=5,
                                                                                                            sticky=W)
+
             s = StringVar()
             ent = ctk.CTkEntry(self, width=250, font=self.my_font, textvariable=s, bg_color='#d5d8db')
             ent.grid(row=row, column=2)
@@ -71,23 +75,15 @@ class Section(ctk.CTkToplevel):
         name_table = 'Сервисы'
         self.list_of_columns = ['№Обращения', 'Тип лица', 'Вид услуги', 'Дата оплаты', 'ФИО', 'Телефон',
                                 'Населенный пункт', 'Улица', 'Дом', 'Квартира', 'Фазность ПУ', 'Номер ПУ',
-                                'Сумма', 'Дата исполнения', 'Примечание']
+                                'Сумма', 'Дата исполнения', 'Приоритет', 'Примечание']
         for column in self.list_of_columns:
             match column:
                 case 'Примечание':
                     ctk.CTkLabel(self, text=column, font=self.my_font, text_color='#004B87', bg_color='#d5d8db').place(
                         relx=0.51,
-                        rely=0.016)
+                        rely=0.007)
                     text = Text(self, width=35, height=10, font=self.my_font)
                     text.place(relx=0.65, rely=0.016)
-                    var = StringVar()
-                    var.set('нет')
-                    ctk.CTkCheckBox(self, text='СТП', variable=var, onvalue='да', offvalue='нет',
-                                    fg_color='#004B87', font=self.my_font, text_color='#004B87',
-                                    bg_color='#d5d8db').place(relx=0.65,
-                                                              rely=0.42)
-
-                    self.values.append(var)
                 case 'Тип лица':
                     Section.set_combobox(self, column, self.values, ['ЮЛ', 'ФЛ'], self.row)
                     self.row += 1
@@ -99,15 +95,17 @@ class Section(ctk.CTkToplevel):
                                                                      'Переопломбировка',
                                                                      'Вывод ПУ из расчетов',
                                                                      'Осмотр ПУ',
-                                                                     'Прочее (связаться со специалистом)'], self.row)
+                                                                     'Прочее (Полухина Т.Н.)'], self.row)
                     self.row += 1
                 case 'Фазность ПУ':
                     Section.set_combobox(self, column, self.values, ['1Ф', '3Ф', '3Ф ТТ'], self.row)
                     self.row += 1
+                case 'Приоритет':
+                    Section.set_combobox(self, column, self.values, ['1', '2', '3', 'СТП'], self.row)
+                    self.row += 1
                 case _:
                     Section.set_combobox(self, column, self.values, False, self.row)
                     self.row += 1
-        self.list_of_columns.insert(14, 'СТП')
         create_service = ctk.CTkButton(self, text="Создать задание", font=self.my_font, height=40,
                                        bg_color='#d5d8db', fg_color='#004B87', width=80,
                                        command=lambda: Base.add_row_in_table(name_table, self.list_of_columns,
@@ -118,13 +116,14 @@ class Section(ctk.CTkToplevel):
         """Создание модального окна заданий"""
         name_table = 'Задания'
         self.list_of_columns = ['Место прибора', 'Тип лица', 'ФИО', 'Телефон', 'Населенный пункт', 'Улица', 'Дом',
-                                'Квартира', 'Фазность ПУ', 'Номер ПУ', 'Задание', 'Дата исполнения', 'Примечание']
+                                'Квартира', 'Фазность ПУ', 'Номер ПУ', 'Задание', 'Дата исполнения', 'Приоритет',
+                                'Примечание']
         for column in self.list_of_columns:
             match column:
                 case 'Примечание':
                     ctk.CTkLabel(self, text=column, font=self.my_font, text_color='#004B87', bg_color='#d5d8db').place(
                         relx=0.51,
-                        rely=0.016)
+                        rely=0.007)
                     text = Text(self, width=35, height=10, font=self.my_font)
                     text.place(relx=0.65, rely=0.016)
                 case 'Тип лица':
@@ -132,6 +131,9 @@ class Section(ctk.CTkToplevel):
                     self.row += 1
                 case 'Фазность ПУ':
                     Section.set_combobox(self, column, self.values, ['1Ф', '3Ф', '3Ф ТТ'], self.row)
+                    self.row += 1
+                case 'Приоритет':
+                    Section.set_combobox(self, column, self.values, ['1', '2', '3'], self.row)
                     self.row += 1
                 case _:
                     Section.set_combobox(self, column, self.values, False, self.row)
@@ -147,13 +149,13 @@ class Section(ctk.CTkToplevel):
         name_table = 'Обращения'
         self.list_of_columns = ['№Обращения', 'Тип лица', 'ФИО', 'Телефон', 'Населенный пункт', 'Улица', 'Дом',
                                 'Квартира', 'Вид обращения', 'Причина обращения', 'Дата регистрации', 'Дата исполнения',
-                                'Примечание']
+                                'Приоритет', 'Примечание']
         for column in self.list_of_columns:
             match column:
                 case 'Примечание':
                     ctk.CTkLabel(self, text=column, font=self.my_font, text_color='#004B87', bg_color='#d5d8db').place(
                         relx=0.51,
-                        rely=0.016)
+                        rely=0.007)
                     text = Text(self, width=35, height=10, font=self.my_font)
                     text.place(relx=0.65, rely=0.016)
                 case 'Тип лица':
@@ -165,8 +167,12 @@ class Section(ctk.CTkToplevel):
                 case 'Причина обращения':
                     Section.set_combobox(self, column, self.values,
                                          ['Качество', 'Наружное освещение', 'Обследование ЛЭП', 'Расчистка трассы',
-                                          'Прочее', 'Замена ввода', 'Хищение э/э', 'Обследование ПУ', 'Замена ПУ'],
+                                          'Прочее (Рахманина Е.В.)', 'Замена ввода', 'Хищение э/э', 'Обследование ПУ',
+                                          'Замена ПУ по жалобе'],
                                          self.row)
+                    self.row += 1
+                case 'Приоритет':
+                    Section.set_combobox(self, column, self.values, ['1', '2', '3'], self.row)
                     self.row += 1
                 case _:
                     Section.set_combobox(self, column, self.values, False, self.row)
@@ -184,13 +190,13 @@ class Section(ctk.CTkToplevel):
         self.list_of_columns = ['№Заявки', '№Договора', 'Тип лица', 'Наименование объекта', 'Населенный пункт',
                                 'Улица', 'Дом', 'Квартира', 'ФИО', 'Телефон', 'Тип подключения', 'Категория надежности',
                                 'Pmax, кВт', 'U,кВ', 'Источник', 'Дата заключения договора', 'Дата исполнения',
-                                'Примечание']
+                                'Приоритет', 'Примечание']
         for column in self.list_of_columns:
             match column:
                 case 'Примечание':
                     ctk.CTkLabel(self, text=column, font=self.my_font, text_color='#004B87', bg_color='#d5d8db').place(
                         relx=0.51,
-                        rely=0.016)
+                        rely=0.007)
                     text = Text(self, width=35, height=10, font=self.my_font)
                     text.place(relx=0.65, rely=0.016)
                 case 'Тип лица':
@@ -207,6 +213,9 @@ class Section(ctk.CTkToplevel):
                 case 'U,кВ':
                     Section.set_combobox(self, column, self.values, ['0,23кВ', '0,4кВ', '10кВ'], self.row)
                     self.row += 1
+                case 'Приоритет':
+                    Section.set_combobox(self, column, self.values, ['1', '2', '3'], self.row)
+                    self.row += 1
                 case _:
                     Section.set_combobox(self, column, self.values, False, self.row)
                     self.row += 1
@@ -218,7 +227,7 @@ class Section(ctk.CTkToplevel):
 
     def control(self):
         """Создание модального окна управления данными"""
-        self.geometry('1720x790+300+40')
+        self.geometry('1740x790+300+40')
         style = ttk.Style()
         style.theme_use("default")
         style.configure("Treeview", background="#2a2d2e", foreground="white", rowheight=20, fieldbackground="#343638",
@@ -231,13 +240,11 @@ class Section(ctk.CTkToplevel):
         frame_right = ctk.CTkFrame(master=self, fg_color='grey', corner_radius=11, bg_color='#d5d8db')
         frame_right.grid(row=0, column=1, sticky="nswe", padx=15, pady=15)
         frame_left.grid_rowconfigure(0, minsize=10)
-        frame_left.grid_rowconfigure(8, minsize=20)
-        frame_left.grid_rowconfigure(11, minsize=10)
         add_menu_display211 = ctk.CTkFrame(master=frame_right, corner_radius=15, height=400, width=600)
         add_menu_display211.grid(pady=12, padx=14, sticky="nws")
         columns = (
             'id', 'ФИО', 'Тип лица', 'Телефон', '№ Прибора учета', 'Фазность', 'Населенный пункт', 'Улица', 'Дом',
-            'Квартира', 'Задание', 'Дата исполнения', 'CТП')
+            'Квартира', 'Задание', 'Дата исполнения', 'Приоритет')
         self.option_add("*tearOff", FALSE)
         main_menu = Menu()
         file_menu = Menu()
@@ -267,10 +274,10 @@ class Section(ctk.CTkToplevel):
                               selectmode='browse',
                               show='headings')
         for i in columns:
-            if i in ('id', "Дом", "CТП", "Код"):
+            if i in ('id', "Дом", "Код"):
                 table.column(i, minwidth=45, width=45, anchor=CENTER)
                 table.heading(i, text=i)
-            elif i in ("Тип лица", "Квартира", "Фазность"):
+            elif i in ("Тип лица", "Квартира", "Фазность", "Приоритет"):
                 table.column(i, minwidth=65, width=65, anchor=CENTER)
                 table.heading(i, text=i)
             elif i == "Задание":
@@ -298,9 +305,10 @@ class Section(ctk.CTkToplevel):
         street_entry.grid(row=3, column=0, padx=20)
         check_var = StringVar()
         check_var.set('нет')
-        ctk.CTkCheckBox(self, text='Объединять', variable=check_var, onvalue='да', offvalue='нет',
-                        fg_color='#004B87', font=self.control_font, text_color='#565b5e',
-                        bg_color='#d5d8db').place(x=97, y=310, anchor=CENTER)
+        check = ctk.CTkCheckBox(frame_left, text='Объединять', variable=check_var, onvalue='да', offvalue='нет',
+                                fg_color='#004B87', font=self.control_font, text_color='#565b5e',
+                                bg_color='#d5d8db')
+        check.place(x=97, y=310, anchor=CENTER)
         button_1 = ctk.CTkButton(master=frame_left,
                                  font=self.control_font,
                                  text="Найти",
@@ -342,6 +350,7 @@ class Section(ctk.CTkToplevel):
                                  width=200,
                                  command=lambda: Base.upload_route_to_excel(columns, table))
         button_4.place(x=122, y=736, anchor=CENTER)
+
         button_5 = ctk.CTkButton(master=frame_left,
                                  font=self.control_font,
                                  text="Показать всё",
@@ -516,7 +525,7 @@ class Section(ctk.CTkToplevel):
                                                   [Фазность ПУ]={Base.VALUES_LIST[10]},
                                                   [Номер ПУ]={Base.VALUES_LIST[11]},
                                                   [Сумма]={Base.VALUES_LIST[12]},
-                                                  [СТП]={Base.VALUES_LIST[13]},
+                                                  [Приоритет]={Base.VALUES_LIST[13]},
                                                   [Дата исполнения]={Base.VALUES_LIST[14]}
                                 WHERE id = {tp_rows[0][0]};""")
                 db.commit()
