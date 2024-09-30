@@ -9,7 +9,6 @@ from openpyxl.reader.excel import load_workbook
 import customtkinter as ctk
 
 
-
 class Base:
     """Класс по работе с базой данных SQLite"""
 
@@ -260,6 +259,8 @@ class Base:
             cls.VALUES_LIST.append(route_row)
         file = fd.asksaveasfilename(filetypes=(("Excel files", "*.xlsx"), ("CSV files", "*.csv")))
         df = pd.DataFrame(cls.VALUES_LIST, columns=table_columns)
+        df['Приоритет'] = df['Приоритет'].astype(int)
+        df = df.sort_values('Приоритет')
         writer = pd.ExcelWriter(file, engine='xlsxwriter')
         df.to_excel(writer, sheet_name='Лист1', index=False)
         for column in df:
@@ -267,6 +268,10 @@ class Base:
             col_idx = df.columns.get_loc(column)
             writer.sheets['Лист1'].set_column(col_idx, col_idx, column_width)
         writer.close()
+        wb = load_workbook(file)
+        ws = wb.active
+        ws.auto_filter.ref = ws.dimensions
+        wb.save(file)
         os.startfile(file)
         cls.VALUES_LIST = []
 
@@ -278,8 +283,6 @@ class Base:
                        ("CSV files", "*.csv")))
         conn = sqlite3.connect(cls.PATH)
         df = pd.read_sql(f'SELECT * FROM {name_table}', conn)
-        # if name_table != 'Сервисы':
-        #     df.drop(columns=['СТП'], axis=1, inplace=True)
         writer = pd.ExcelWriter(file)
         df.to_excel(writer, index=False, sheet_name='Лист1')
         for column in df:
@@ -287,6 +290,10 @@ class Base:
             col_idx = df.columns.get_loc(column)
             writer.sheets['Лист1'].set_column(col_idx, col_idx, column_width)
         writer.close()
+        wb = load_workbook(file)
+        ws = wb.active
+        ws.auto_filter.ref = ws.dimensions
+        wb.save(file)
         os.startfile(file)
 
     @classmethod
@@ -329,50 +336,50 @@ class Base:
     def counter(cls, name_table):
         db = sqlite3.connect(cls.PATH)
         cursor = db.cursor()
-        cursor.execute(f'SELECT COUNT(id) FROM {name_table}')
+        cursor.execute(f'SELECT COUNT(id) FROM {name_table} WHERE "Исполнено" is NULL')
         nums = cursor.fetchone()
         db.commit()
         return int(nums[0])
 
     @classmethod
-    def counter_where(cls, name_table, last_date, first_date):
+    def counter_where(cls, name_table, last_date):
         db = sqlite3.connect(cls.PATH)
         cursor = db.cursor()
-        cursor.execute(
-            f'SELECT COUNT(id) FROM {name_table} WHERE ([Дата исполнения] >= {last_date}) AND ([Дата исполнения] <= {first_date})')
+        cursor.execute(f'SELECT COUNT(id) FROM {name_table} WHERE [Дата исполнения] < {last_date} AND Исполнено is NULL')
         nums_s = cursor.fetchone()
         db.commit()
         return int(nums_s[0])
 
     @classmethod
-    def counter_not_null(cls, name_table):
+    def counter_not_null(cls, name_table, last_date, first_date):
         db = sqlite3.connect(cls.PATH)
         cursor = db.cursor()
         cursor.execute(
-            f'SELECT COUNT(id) FROM {name_table} WHERE Исполнено is not NULL')
+            f'SELECT COUNT(id) FROM {name_table} WHERE Исполнено BETWEEN {first_date} AND {last_date}')
         nums = cursor.fetchone()
         db.commit()
+        print(first_date)
+        print(last_date)
         return int(nums[0])
 
     @classmethod
     def make_report(cls):
         now = dt.datetime.now()
-        # year = now.strftime('%Y')
-        first_date = cls.QUOTES + now.strftime("%d.%m.%Y") + cls.QUOTES
+        last_date = cls.QUOTES + now.strftime("%d.%m.%Y") + cls.QUOTES
         report_date = now - dt.timedelta(days=7)
-        last_date = cls.QUOTES + report_date.strftime("%d.%m.%Y") + cls.QUOTES
+        first_date = cls.QUOTES + report_date.strftime("%d.%m.%Y") + cls.QUOTES
         all_tusk = cls.counter('Задания')
         all_app = cls.counter('Обращения')
         all_conn = cls.counter('ТехПрис')
         all_serv = cls.counter('Сервисы')
-        current_serv = cls.counter_where('Сервисы', last_date, first_date)
-        current_app = cls.counter_where('Обращения', last_date, first_date)
-        current_conn = cls.counter_where('ТехПрис', last_date, first_date)
-        current_tusk = cls.counter_where('Задания', last_date, first_date)
-        on_date_serv = cls.counter_not_null('Сервисы')
-        on_date_app = cls.counter_not_null('Обращения')
-        on_date_conn = cls.counter_not_null('ТехПрис')
-        on_date_tusk = cls.counter_not_null('Задания')
+        current_serv = cls.counter_where('Сервисы', last_date)
+        current_app = cls.counter_where('Обращения', last_date)
+        current_conn = cls.counter_where('ТехПрис', last_date)
+        current_tusk = cls.counter_where('Задания', last_date)
+        on_date_serv = cls.counter_not_null('Сервисы', last_date, first_date)
+        on_date_app = cls.counter_not_null('Обращения', last_date, first_date)
+        on_date_conn = cls.counter_not_null('ТехПрис', last_date, first_date)
+        on_date_tusk = cls.counter_not_null('Задания', last_date, first_date)
         summ = cls.sum_service('Сервисы')
         mk = cls.market_coverage('Сервисы')
         fn = 'E:/Обучение_IT/Projects/PyCharm/Work_Planner/Форма отчета.xlsx'

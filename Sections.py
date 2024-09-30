@@ -1,10 +1,8 @@
-
 from Base import *
 import customtkinter as ctk
 import tkinter.ttk as ttk
 from datetime import timedelta
 import datetime as dt
-
 
 
 class ColorTreeview(ttk.Treeview):
@@ -55,7 +53,8 @@ class Section(ctk.CTkToplevel):
                                                                                                            pady=5,
                                                                                                            sticky=W)
             s = StringVar()
-            ctk.CTkComboBox(self, values=combo_val, width=250, variable=s, bg_color='#d5d8db', font=self.my_font).grid(
+            ctk.CTkComboBox(self, values=combo_val, width=250, variable=s, bg_color='#d5d8db', font=self.my_font,
+                            state="readonly").grid(
                 row=row, column=2)
             list_val.append(s)
         else:
@@ -225,9 +224,30 @@ class Section(ctk.CTkToplevel):
                                                                                  self.values, text, self))
             create_service.place(relx=0.82, rely=0.89)
 
+    def center_window(self):
+        self.update_idletasks()  # Обновляем геометрию окна
+
+        # Получаем размеры окна
+        # window_width = self.winfo_width()
+        # window_height = self.winfo_height()
+        window_width = 1740
+        window_height = 790
+
+        # Получаем размеры экрана
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+
+        # Вычисляем координаты для размещения окна по центру
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+
+        # Устанавливаем размеры и положение окна
+        self.geometry(f'+{x}+{y}')
+
     def control(self):
         """Создание модального окна управления данными"""
-        self.geometry('1740x790+300+40')
+        self.geometry(f'1740x790')
+        self.center_window()
         style = ttk.Style()
         style.theme_use("default")
         style.configure("Treeview", background="#2a2d2e", foreground="white", rowheight=20, fieldbackground="#343638",
@@ -361,6 +381,16 @@ class Section(ctk.CTkToplevel):
                                  width=200,
                                  command=lambda: Base.show_all_raws(table, check_var.get()))
         button_5.place(x=122, y=691, anchor=CENTER)
+        button_6 = ctk.CTkButton(master=frame_left,
+                                 font=self.control_font,
+                                 text="Подробности",
+                                 corner_radius=15,
+                                 border_width=3,
+                                 border_color="#004B87",
+                                 fg_color="#565b5e",
+                                 width=200,
+                                 command=lambda: Section.show_details(self, table))
+        button_6.place(x=122, y=646, anchor=CENTER)
 
     def edit(self, table):
         """Создание модального окна по редактированию строк таблицы"""
@@ -376,7 +406,7 @@ class Section(ctk.CTkToplevel):
                     cursor.execute(f'''SELECT * FROM ТехПрис WHERE id ={row_values[0]}''')
                     tp_rows = cursor.fetchall()
                     db.commit()
-                    string_vars = [StringVar() for k in range(17)]
+                    string_vars = [StringVar() for k in range(18)]
                     tp_master = EditTable(self)
                     for j in tp_rows[0][1:18]:
                         ent = ctk.CTkEntry(tp_master, width=350, font=self.my_font,
@@ -388,6 +418,14 @@ class Section(ctk.CTkToplevel):
                                            anchor="w")
                         lbl.grid(row=tp_master.ROW, column=1)
                         tp_master.ROW += 1
+                    ent1 = ctk.CTkEntry(tp_master, width=350, font=self.my_font,
+                                        textvariable=string_vars[tp_master.ROW])
+                    ent1.grid(row=tp_master.ROW, column=0)
+                    ent1.insert(tp_master.ROW, str(tp_rows[0][20]))
+                    lbl1 = ctk.CTkLabel(tp_master, width=250, font=self.my_font,
+                                        text='Приоритет',
+                                        anchor="w")
+                    lbl1.grid(row=tp_master.ROW, column=1)
                     btn = ctk.CTkButton(tp_master, text='Изменить', font=self.control_font, corner_radius=15,
                                         border_width=3,
                                         border_color="#004B87",
@@ -404,7 +442,7 @@ class Section(ctk.CTkToplevel):
                     cursor.execute(f'''SELECT * FROM Сервисы WHERE id ={row_values[0]}''')
                     sv_rows = cursor.fetchall()
                     db.commit()
-                    string_vars = [StringVar() for k in range(15)]
+                    string_vars = [StringVar() for k in range(16)]
                     sv_master = EditTable(self)
                     for j in sv_rows[0][1:16]:
                         ent = ctk.CTkEntry(sv_master, width=350, font=self.my_font,
@@ -416,6 +454,14 @@ class Section(ctk.CTkToplevel):
                                            anchor="w")
                         lbl.grid(row=sv_master.ROW, column=1)
                         sv_master.ROW += 1
+                    ent1 = ctk.CTkEntry(sv_master, width=350, font=self.my_font,
+                                        textvariable=string_vars[sv_master.ROW])
+                    ent1.grid(row=sv_master.ROW, column=0)
+                    ent1.insert(sv_master.ROW, str(sv_rows[0][14]))
+                    lbl1 = ctk.CTkLabel(sv_master, width=250, font=self.my_font,
+                                        text='Приоритет',
+                                        anchor="w")
+                    lbl1.grid(row=sv_master.ROW, column=1)
                     btn = ctk.CTkButton(sv_master, text='Изменить', font=self.control_font, corner_radius=15,
                                         border_width=3,
                                         border_color="#004B87",
@@ -432,7 +478,7 @@ class Section(ctk.CTkToplevel):
                     cursor.execute(f'''SELECT * FROM Обращения WHERE id ={row_values[0]}''')
                     ap_rows = cursor.fetchall()
                     db.commit()
-                    string_vars = [StringVar() for k in range(12)]
+                    string_vars = [StringVar() for k in range(13)]
                     ap_master = EditTable(self)
                     for j in ap_rows[0][1:13]:
                         ent = ctk.CTkEntry(ap_master, width=350, font=self.my_font,
@@ -444,6 +490,14 @@ class Section(ctk.CTkToplevel):
                                            anchor="w")
                         lbl.grid(row=ap_master.ROW, column=1)
                         ap_master.ROW += 1
+                    ent1 = ctk.CTkEntry(ap_master, width=350, font=self.my_font,
+                                        textvariable=string_vars[ap_master.ROW])
+                    ent1.grid(row=ap_master.ROW, column=0)
+                    ent1.insert(ap_master.ROW, str(ap_rows[0][15]))
+                    lbl1 = ctk.CTkLabel(ap_master, width=250, font=self.my_font,
+                                        text='Приоритет',
+                                        anchor="w")
+                    lbl1.grid(row=ap_master.ROW, column=1)
                     btn = ctk.CTkButton(ap_master, text='Изменить', font=self.control_font, corner_radius=15,
                                         border_width=3,
                                         border_color="#004B87",
@@ -459,7 +513,7 @@ class Section(ctk.CTkToplevel):
                 cursor.execute(f'''SELECT * FROM Задания WHERE id ={row_values[0]}''')
                 tk_rows = cursor.fetchall()
                 db.commit()
-                string_vars = [StringVar() for k in range(12)]
+                string_vars = [StringVar() for k in range(13)]
                 tk_master = EditTable(self)
                 for j in tk_rows[0][1:13]:
                     ent = ctk.CTkEntry(tk_master, width=350, font=self.my_font,
@@ -471,6 +525,14 @@ class Section(ctk.CTkToplevel):
                                        anchor="w")
                     lbl.grid(row=tk_master.ROW, column=1)
                     tk_master.ROW += 1
+                ent1 = ctk.CTkEntry(tk_master, width=350, font=self.my_font,
+                                    textvariable=string_vars[tk_master.ROW])
+                ent1.grid(row=tk_master.ROW, column=0)
+                ent1.insert(tk_master.ROW, str(tk_rows[0][15]))
+                lbl1 = ctk.CTkLabel(tk_master, width=250, font=self.my_font,
+                                    text='Приоритет',
+                                    anchor="w")
+                lbl1.grid(row=tk_master.ROW, column=1)
                 btn = ctk.CTkButton(tk_master, text='Изменить', font=self.control_font, corner_radius=15,
                                     border_width=3,
                                     border_color="#004B87",
@@ -506,7 +568,8 @@ class Section(ctk.CTkToplevel):
                                                   [U,кВ]={Base.VALUES_LIST[13]},
                                                   [Источник]={Base.VALUES_LIST[14]},
                                                   [Дата заключения договора]={Base.VALUES_LIST[15]},
-                                                  [Дата исполнения]={Base.VALUES_LIST[16]}
+                                                  [Дата исполнения]={Base.VALUES_LIST[16]},
+                                                  [Приоритет]={Base.VALUES_LIST[17]}
                                     WHERE id = {tp_rows[0][0]};""")
                 db.commit()
                 cursor.close()
@@ -526,7 +589,8 @@ class Section(ctk.CTkToplevel):
                                                   [Номер ПУ]={Base.VALUES_LIST[11]},
                                                   [Сумма]={Base.VALUES_LIST[12]},
                                                   [Приоритет]={Base.VALUES_LIST[13]},
-                                                  [Дата исполнения]={Base.VALUES_LIST[14]}
+                                                  [Дата исполнения]={Base.VALUES_LIST[14]},
+                                                  [Приоритет]={Base.VALUES_LIST[15]}
                                 WHERE id = {tp_rows[0][0]};""")
                 db.commit()
                 cursor.close()
@@ -543,7 +607,8 @@ class Section(ctk.CTkToplevel):
                                                   [Вид обращения]={Base.VALUES_LIST[8]},
                                                   [Причина обращения]={Base.VALUES_LIST[9]},
                                                   [Дата регистрации]={Base.VALUES_LIST[10]},
-                                                  [Дата исполнения]={Base.VALUES_LIST[11]}
+                                                  [Дата исполнения]={Base.VALUES_LIST[11]},
+                                                  [Приоритет]={Base.VALUES_LIST[12]}
                                 WHERE id = {tp_rows[0][0]};""")
                 db.commit()
                 cursor.close()
@@ -560,12 +625,94 @@ class Section(ctk.CTkToplevel):
                                                   [Фазность ПУ]={Base.VALUES_LIST[8]},
                                                   [Номер ПУ]={Base.VALUES_LIST[9]},
                                                   [Задание]={Base.VALUES_LIST[10]},
-                                                  [Дата исполнения]={Base.VALUES_LIST[11]}
+                                                  [Дата исполнения]={Base.VALUES_LIST[11]},
+                                                  [Приоритет]={Base.VALUES_LIST[12]}
                                 WHERE id = {tp_rows[0][0]};""")
                 db.commit()
                 cursor.close()
                 Base.VALUES_LIST = []
         mb.showinfo(title="Информация", message="Успешно!", parent=parent_window)
+
+    def show_details(self, table):
+        selected = table.selection()
+        if selected:
+            selected_item = table.selection()[0]
+            row_values = table.item(selected_item, option="values")
+            db = sqlite3.connect(Base.PATH)
+            cursor = db.cursor()
+            for i in Base.TP_LIST:
+                if row_values[10] == i:
+                    cursor.execute(f'''SELECT Примечание FROM ТехПрис WHERE id ={row_values[0]}''')
+                    tp_rows = cursor.fetchone()
+                    db.commit()
+                    tp_master = EditTable(self)
+                    text_box = ctk.CTkTextbox(tp_master, width=520, height=440, font=self.my_font, bg_color='#d5d8db')
+                    text_box.grid(row=0, column=0, padx=20, pady=5)
+                    text_box.insert("0.0", text=tp_rows[0][0])
+                    ctk.CTkLabel(tp_master, text='Ответственный специалист: специалист по тех.присоединениям',
+                                 font=self.my_font,
+                                 text_color='#004B87').grid(row=1,
+                                                            column=0,
+                                                            padx=20,
+                                                            pady=5,
+                                                            sticky=W)
+                    tp_master.mainloop()
+                    EditTable.TASK = False
+                    tp_master.ROW = 0
+            for i in Base.SERVICE_LIST:
+                if row_values[10] == i:
+                    cursor.execute(f'''SELECT Примечание FROM Сервисы WHERE id ={row_values[0]}''')
+                    sv_rows = cursor.fetchall()
+                    db.commit()
+                    sv_master = EditTable(self)
+                    text_box = ctk.CTkTextbox(sv_master, width=520, height=440, font=self.my_font, bg_color='#d5d8db')
+                    text_box.grid(row=0, column=0, padx=20, pady=5)
+                    text_box.insert("0.0", text=sv_rows[0][0])
+                    ctk.CTkLabel(sv_master, text='Ответственный специалист: специалист по доп.сервисам',
+                                 font=self.my_font,
+                                 text_color='#004B87').grid(row=1,
+                                                            column=0,
+                                                            padx=20,
+                                                            pady=5,
+                                                            sticky=W)
+                    sv_master.mainloop()
+                    EditTable.TASK = False
+                    sv_master.ROW = 0
+            for i in Base.APPEAL_LIST:
+                if row_values[10] == i:
+                    cursor.execute(f'''SELECT Примечание FROM Обращения WHERE id ={row_values[0]}''')
+                    ap_rows = cursor.fetchall()
+                    db.commit()
+                    ap_master = EditTable(self)
+                    text_box = ctk.CTkTextbox(ap_master, width=520, height=440, font=self.my_font, bg_color='#d5d8db')
+                    text_box.grid(row=0, column=0, padx=20, pady=5)
+                    text_box.insert("0.0", text=ap_rows[0][0])
+                    ctk.CTkLabel(ap_master, text='Ответственный специалист: специалист по обращениям и жалобам',
+                                 font=self.my_font,
+                                 text_color='#004B87').grid(row=1,
+                                                            column=0,
+                                                            padx=20,
+                                                            pady=5,
+                                                            sticky=W)
+                    ap_master.mainloop()
+                    EditTable.TASK = False
+                    ap_master.ROW = 0
+            if EditTable.TASK:
+                cursor.execute(f'''SELECT Примечание FROM Задания WHERE id ={row_values[0]}''')
+                tk_rows = cursor.fetchall()
+                db.commit()
+                tk_master = EditTable(self)
+                text_box = ctk.CTkTextbox(tk_master, width=520, height=440, font=self.my_font, bg_color='#d5d8db')
+                text_box.grid(row=0, column=0, padx=20, pady=5)
+                text_box.insert("0.0", text=tk_rows[0][0])
+                ctk.CTkLabel(tk_master, text='Ответственный специалист: инженер ОМиВК', font=self.my_font,
+                             text_color='#004B87').grid(row=1,
+                                                        column=0,
+                                                        padx=20,
+                                                        pady=5,
+                                                        sticky=W)
+                tk_master.mainloop()
+                tk_master.ROW = 0
 
     def work_with_base(self):
         set_id_label = ctk.CTkLabel(self, text='id', font=self.my_font, text_color='#004B87', bg_color='#d5d8db')
@@ -587,15 +734,16 @@ class Section(ctk.CTkToplevel):
                                border_color="#004B87",
                                fg_color="#565b5e",
                                width=200,
-                               command=lambda: drop(id_var.get(), table_var.get()))
+                               command=lambda: self.drop(id_var.get(), table_var.get()))
         button.place(x=210, y=90, anchor=CENTER)
 
-        def drop(num_id, name_table):
-            db = sqlite3.connect(Base.PATH)
-            cursor = db.cursor()
-            cursor.execute(f'DELETE FROM {name_table} WHERE id = {num_id}')
-            db.commit()
-            cursor.close()
+    @staticmethod
+    def drop(num_id, name_table):
+        db = sqlite3.connect(Base.PATH)
+        cursor = db.cursor()
+        cursor.execute(f'DELETE FROM {name_table} WHERE id = {num_id}')
+        db.commit()
+        cursor.close()
 
 
 class EditTable(ctk.CTkToplevel):
