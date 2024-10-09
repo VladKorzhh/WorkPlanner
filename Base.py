@@ -57,8 +57,35 @@ class Base:
             return True
 
     @classmethod
-    def validation_by_date(cls, name_table, def_name):
+    def get_label_if_priority_invalid(cls, value, def_name):
+        """Проверят не пусто ли поле Приоритет"""
+        if cls.VALUES_LIST[value] == "" or cls.VALUES_LIST[value] is None:
+            return ctk.CTkLabel(def_name, text='Установите приоритет!', text_color='red',
+                                bg_color='#d5d8db').grid(row=value,
+                                                         column=3,
+                                                         padx=20,
+                                                         pady=6,
+                                                         sticky=W)
+        else:
+            return True
+
+    @classmethod
+    def validation_by_priority(cls, name_table, def_name):
         """Исполняет функцию get_label_if_date_invalid в зависимости от таблицы """
+        match name_table:
+            case 'Сервисы':
+                if cls.get_label_if_priority_invalid(14, def_name):
+                    return True
+            case 'ТехПрис':
+                if cls.get_label_if_priority_invalid(17, def_name):
+                    return True
+            case _:
+                if cls.get_label_if_priority_invalid(12, def_name):
+                    return True
+
+    @classmethod
+    def validation_by_date(cls, name_table, def_name):
+        """Исполняет функцию get_label_if_priority_invalid в зависимости от таблицы """
         match name_table:
             case 'Сервисы':
                 if cls.get_label_if_date_invalid(13, def_name):
@@ -76,7 +103,8 @@ class Base:
         for i in values:
             cls.VALUES_LIST.append(i.get())
         cls.VALUES_LIST.append(text.get(1.0, END))
-        if cls.validation_by_date(name_table, def_name):
+        print(cls.validation_by_priority(name_table, def_name))
+        if cls.validation_by_date(name_table, def_name) and cls.validation_by_priority(name_table, def_name):
             db = sqlite3.connect(cls.PATH)
             cursor = db.cursor()
             cursor.execute(f'INSERT INTO {name_table} {tuple(column)} VALUES {tuple(cls.VALUES_LIST)}')
@@ -345,7 +373,8 @@ class Base:
     def counter_where(cls, name_table, last_date):
         db = sqlite3.connect(cls.PATH)
         cursor = db.cursor()
-        cursor.execute(f'SELECT COUNT(id) FROM {name_table} WHERE [Дата исполнения] < {last_date} AND Исполнено is NULL')
+        cursor.execute(
+            f'SELECT COUNT(id) FROM {name_table} WHERE [Дата исполнения] < {last_date} AND Исполнено is NULL')
         nums_s = cursor.fetchone()
         db.commit()
         return int(nums_s[0])
